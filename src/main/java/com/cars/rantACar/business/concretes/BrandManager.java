@@ -5,6 +5,7 @@ import com.cars.rantACar.business.requests.CreateBrandRequest;
 import com.cars.rantACar.business.requests.UpdateBrandRequest;
 import com.cars.rantACar.business.responses.GetAllBrandsResponse;
 import com.cars.rantACar.business.responses.GetByIdBrandResponse;
+import com.cars.rantACar.business.rules.BrandBusinessRules;
 import com.cars.rantACar.core.utilities.mappers.ModelMapperService;
 import com.cars.rantACar.dataAccess.abstracts.BrandRepository;
 import com.cars.rantACar.entities.concretes.Brand;
@@ -20,14 +21,14 @@ import java.util.stream.Collectors;
 public class BrandManager implements BrandService {
     private BrandRepository brandRepository;
     private ModelMapperService modelMapperService;
+    private BrandBusinessRules brandBusinessRules;
 
     @Override
     public List<GetAllBrandsResponse> getAll() {
 
         List<Brand> brands = brandRepository.findAll();
-
-        List<GetAllBrandsResponse> brandsResponse = brands.stream().
-                map(brand -> this.modelMapperService.forResponse().
+        List<GetAllBrandsResponse> brandsResponse = brands.stream(). // fori
+                map(brand-> this.modelMapperService.forResponse().
                         map(brand, GetAllBrandsResponse.class)).collect(Collectors.toList());
         return brandsResponse;
     }
@@ -41,26 +42,21 @@ public class BrandManager implements BrandService {
     }
 
     @Override
-    public Brand add(CreateBrandRequest createBrandRequest) {
+    public void add(CreateBrandRequest createBrandRequest) {
+        this.brandBusinessRules.checkIfBrandNameExists(createBrandRequest.getName());
         Brand brand = this.modelMapperService.forRequest().map(createBrandRequest, Brand.class);
-        brand.setName(createBrandRequest.getName());
-        return this.brandRepository.save(brand);
+        this.brandRepository.save(brand);
 
     }
 
     @Override
-    public Brand update(UpdateBrandRequest updateBrandRequest) {
+    public void update(UpdateBrandRequest updateBrandRequest) {
         Brand brand = this.modelMapperService.forRequest().map(updateBrandRequest, Brand.class);
-        return this.brandRepository.save(brand);
+        this.brandRepository.save(brand);
     }
 
     @Override
-    public Boolean delete(int id) {
-        Optional<Brand> brand = brandRepository.findById(id);
-        if (brand.isPresent()) {
-            brandRepository.deleteById(id);
-            return true;
-        }
-        return false;
+    public void delete(int id) {
+       this.brandRepository.deleteById(id);
     }
 }
